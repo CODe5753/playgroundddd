@@ -1,0 +1,5 @@
+### Test payment notification flow (uses UmsNotifier -> logs only)
+POST http://localhost:8080/pay
+Content-Type: application/json
+
+{}
