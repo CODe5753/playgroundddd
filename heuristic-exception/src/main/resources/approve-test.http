@@ -1,0 +1,10 @@
+### 부하/타임아웃 기반 휴리스틱 상황 호출 예시
+POST http://localhost:8080/approve
+Content-Type: application/json
+
+{
+  "approvalId": "APP-1",
+  "amount": 100.00,
+  "phoneNumber": "010-1234-5678",
+  "message": "hello"
+}

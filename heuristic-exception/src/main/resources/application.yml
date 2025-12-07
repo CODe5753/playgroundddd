@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    db1:
+      url: jdbc:mysql://localhost:33061/approval_db?characterEncoding=UTF-8&serverTimezone=UTC
+      username: app
+      password: app
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    db2:
+      url: jdbc:mysql://localhost:33062/ums_db?characterEncoding=UTF-8&serverTimezone=UTC
+      username: app
+      password: app
+      hikari:
+        connection-timeout: 8000
+        validation-timeout: 8000
+      properties:
+        socketTimeout: 8000
+        connectTimeout: 6000
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    db2root:
+      url: jdbc:mysql://localhost:33062/ums_db?characterEncoding=UTF-8&serverTimezone=UTC
+      username: root
+      password: root
+      driver-class-name: com.mysql.cj.jdbc.Driver
+  main:
+    allow-bean-definition-overriding: true
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true

@@ -1,0 +1,80 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: heuristic-exception/Dockerfile
+    image: heuristic-exception-app:latest
+    container_name: heuristic-exception-app
+    depends_on:
+      - mysql-approval
+      - mysql-ums
+      - toxiproxy
+    environment:
+      SPRING_DATASOURCE_DB1_URL: jdbc:mysql://mysql-approval:3306/approval_db?characterEncoding=UTF-8&serverTimezone=UTC
+      SPRING_DATASOURCE_DB2_URL: jdbc:mysql://toxiproxy:13306/ums_db?characterEncoding=UTF-8&serverTimezone=UTC
+      SPRING_DATASOURCE_DB2ROOT_URL: jdbc:mysql://toxiproxy:13306/ums_db?characterEncoding=UTF-8&serverTimezone=UTC
+    ports:
+      - "8080:8080"
+    profiles: ["app"]
+
+  mysql-approval:
+    image: mysql:8.0
+    container_name: mysql-approval
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: approval_db
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    ports:
+      - "33061:3306"
+    volumes:
+      - ./src/main/resources/db1/init.sql:/docker-entrypoint-initdb.d/init.sql
+  mysql-ums:
+    image: mysql:8.0
+    container_name: mysql-ums
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ums_db
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    mem_limit: 256m
+    cpus: "0.3"
+    ports:
+      - "33062:3306"
+    volumes:
+      - ./src/main/resources/db2/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --innodb_buffer_pool_size=64M
+      - --max_connections=50
+      - --innodb_thread_concurrency=2
+      - --innodb_log_file_size=48M
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.5.0
+    container_name: toxiproxy
+    depends_on:
+      - mysql-ums
+    command: ["toxiproxy-server", "-host=0.0.0.0", "-log-level", "debug"]
+    ports:
+      - "13306:13306"
+      - "8474:8474"
+
+  k6:
+    image: grafana/k6:0.49.0
+    profiles: ["stress"]
+    volumes:
+      - ./load:/scripts
+    environment:
+      - BASE_URL=http://host.docker.internal:8080
+      - VUS=40
+      - DURATION=60s
+    depends_on:
+      - mysql-approval
+      - mysql-ums
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["k6 run /scripts/approve-load.js"]

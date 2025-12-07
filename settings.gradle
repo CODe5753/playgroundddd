@@ -1,2 +1,3 @@
 rootProject.name = 'playground'
+include 'heuristic-exception'
 include 'notifier'
